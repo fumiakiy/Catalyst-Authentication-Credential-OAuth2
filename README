@@ -1,0 +1,20 @@
+I stole most of the code from Catalyst::Authentication::Credential::Facebook::OAuth2 by Florian Ragwitz, replaced the use of Net::Facebook::Oauth2 with Net::OAuth2, and added support to "grant_type" parameter.
+
+These are to support both Facebook and mixi via OAuth2 in my current project.  Feel free to use it in wha
+
+ACKNOWLEDGEMENTS 
+
+As was described above this software is based on a software written by Florian Ragwitz <rafl@debian.org>.
+
+AUTHOR 
+
+Fumiaki Yoshimatsu <fumiakiy@luckypines.com>
+
+COPYRIGHT AND LICENSE 
+
+This software is copyright (c) 2010 by Fumiaki Yoshimatsu.
+
+the software based on which this softare was written is copyright (c) 2010 by Florian Ragwitz, Reask Limited.
+
+This is free software; you can redistribute it and/or modify it under the same terms as the Perl 5 programming language system itself.
+

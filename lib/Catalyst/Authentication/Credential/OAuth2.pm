@@ -73,7 +73,7 @@ sub authenticate {
     else {
         my $url = $self->_oauth
             ->web_server( redirect_uri =>  $ctx->request->uri )
-            ->authorize_url( %{ $auth_info } );
+            ->authorize( %{ $auth_info } );
         $ctx->response->redirect( $url );
         return;
     }

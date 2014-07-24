@@ -4,6 +4,7 @@ use Moose;
 use MooseX::Types::Moose qw(ArrayRef);
 use MooseX::Types::Common::String qw(NonEmptySimpleStr);
 use Net::OAuth2::Client;
+use Digest::SHA1 qw(sha1_hex);
 use namespace::autoclean;
 
 
@@ -39,7 +40,6 @@ sub _build__oauth {
         (map { ($self->$_) } qw(application_id application_secret)),
         (map { ($_ => $self->$_) } qw(site authorize_path authorize_url access_token_path access_token_url)),
         @{ $self->oauth_args },
-        access_token_method => 'POST',
     );
 }
 
@@ -55,26 +55,37 @@ sub BUILD {
     $self->_oauth;
 }
 
-
 sub authenticate {
     my ($self, $ctx, $realm, $auth_info) = @_;
 
     if ( defined( my $code = $ctx->request->params->{code} ) ) {
+        my $redirect_uri = $ctx->uri_for( $ctx->action, $ctx->req->captures, @{ $ctx->req->args } );
+        if ( $ctx->request->secure ) {
+            $redirect_uri->scheme( 'https' );
+        }
+        unless ( $ctx->request->params->{state} eq sha1_hex($ctx->sessionid) ) {
+            die 'Error validating session';
+        }
         my $token = $self->_oauth
-            ->web_server( redirect_uri =>  $ctx->request->base . $ctx->request->path )
+            ->web_server( redirect_uri => $redirect_uri->as_string )
             ->get_access_token( $code, grant_type => 'authorization_code' );
 
         die 'Error validating verification code' unless $token;
 
         return $realm->find_user( {
-            token => $token->{access_token},
+            access_token => $token->{access_token},
         }, $ctx );
     }
     else {
-        my $url = $self->_oauth
-            ->web_server( redirect_uri =>  $ctx->request->uri )
+        my $redirect_uri = $ctx->uri_for( $ctx->action, $ctx->req->captures, @{ $ctx->req->args } );
+        my $uri = $self->_oauth
+            ->web_server( redirect_uri => $redirect_uri )
             ->authorize_url( %{ $auth_info } );
-        $ctx->response->redirect( $url );
+        $uri->query_form(
+            $uri->query_form
+            , state => sha1_hex($ctx->sessionid)
+        );
+        $ctx->response->redirect( $uri );
         return;
     }
 }
